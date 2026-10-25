@@ -1,0 +1,27 @@
+# 环境与密钥；占位模板可以提交
+.env
+.env.*
+!.env.example
+
+# 本机 Python 环境与生成文件
+.venv/
+.uv-cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 编辑器、系统文件与日志
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# 未来功能产生的用户数据与构建产物
+uploads/
+backups/
+*.dump
+*.sqlite3
+node_modules/
+dist/
