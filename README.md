@@ -4,11 +4,12 @@
 
 ## 当前进度
 
-- 已准备：Python 项目配置、依赖环境、代码练习入口和 Day 1 任务说明。
-- 待学习者完成：`GET 已实现并验证通过` 接口、第一条 Git 提交、学习记录。
-- 尚未接入模型、数据库、用户系统或前端；尚未发布到 GitHub。
+- Day 1 已完成：亲自实现 `GET /health`，验证 HTTP 响应，创建本地提交并推送至 GitHub。
+- 首次提交：`6a30d07`。远程仓库：[ai-interview-platform](https://github.com/ikkklkkl-alt/ai-interview-platform)。
+- Day 2 必做部分已完成：返回岗位列表，用 `limit` 控制数量，限制参数在 1～10 之间。已验证，还没提交和推送；关键词筛选暂时没做。
+- 尚未接入模型、数据库、用户系统或前端。
 
-**今天从 [Day 1 任务单](docs/day-01.md) 开始。**
+今天的练习见 [Day 2 任务单](docs/day-02.md)，基础三关已完成。回顾基础时可阅读 [Day 1 任务单](docs/day-01.md)。
 
 ## 第一版范围
 
@@ -30,26 +31,28 @@
 | `.python-version` | 指定本地开发使用的 Python 次版本 |
 | `uv.lock` | 记录解析出的确切依赖版本，应提交到 Git |
 | `.venv/` | 本机虚拟环境，不提交到 Git |
-| `app/main.py` | 今天需要亲自完成的接口代码 |
+| `app/main.py` | 健康检查、岗位列表和查询参数校验 |
 | `.gitignore` | 告诉 Git 哪些本机文件不应跟踪 |
-| `docs/day-01.md` | 今天的步骤和验收标准 |
+| `docs/day-01.md` | 第一天的步骤和验收标准 |
+| `docs/day-02.md` | 岗位列表、查询参数和参数校验练习 |
 | `docs/learning-log.md` | 用自己的话填写学习记录 |
 
 ## 本地运行
 
-先完成 Day 1 的代码 TODO，再执行：
+在学习项目目录执行：
 
 ```bash
 uv sync --locked
-uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8002
 ```
 
-使用 8001 端口，便于与参考项目的 8000 端口区分。打开：
+8001 被其他服务占用，目前使用 8002。打开：
 
-- http://127.0.0.1:8001/health
-- http://127.0.0.1:8001/docs
+- http://127.0.0.1:8002/health
+- http://127.0.0.1:8002/interview-directions
+- http://127.0.0.1:8002/docs
 
-现在的 `app/main.py` 仅有任务提示，尚不能启动服务。虚拟环境安装成功不代表接口已经实现。
+`/health` 返回健康检查结果，`/interview-directions?limit=2` 返回前两条岗位数据。根路径 `/` 没有定义接口，访问它返回 404。
 
 ## 学习方式
 
