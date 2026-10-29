@@ -8,10 +8,11 @@
 - 首次提交：`6a30d07`。远程仓库：[ai-interview-platform](https://github.com/ikkklkkl-alt/ai-interview-platform)。
 - Day 2 必做部分已完成并推送（`8a33bc4`）：岗位列表、`limit` 数量限制和 1～10 的范围校验。关键词筛选暂时没做。
 - Day 3 已完成并推送（`965c27e`）：独立脚本读取配置，用 `httpx` 调用真实 DeepSeek 模型，打印回答、结束原因和 Token 用量，并处理常见请求错误。
-- Day 4 必做练习已完成，待提交：模型以 JSON 格式生成面试题，使用 Pydantic 校验字段，并处理响应结构异常、空正文、截断和解析失败。
+- Day 4 已完成并推送（`b3c1dce`）：模型以 JSON 格式生成面试题，使用 Pydantic 校验字段，并处理响应结构异常、空正文、截断和解析失败。
+- Day 5 进行中：已完成 5 个字段校验测试，3 个模型调用流程测试仍为 skipped。下次从第三关的成功响应模拟开始。
 - 目前 Web 接口尚未接入模型、数据库、用户系统或前端。
 
-今天的练习见 [Day 4 任务单](docs/day-04.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md) 和 [Day 3](docs/day-03.md)。
+今天的练习见 [Day 5 任务单](docs/day-05.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md) 和 [Day 4](docs/day-04.md)。
 
 ## 第一版范围
 
@@ -36,12 +37,17 @@
 | `app/main.py` | 健康检查、岗位列表和查询参数校验 |
 | `scripts/first_model_call.py` | 独立调用 DeepSeek，读取回答与用量，处理超时、连接及 HTTP 状态错误 |
 | `scripts/structured_question.py` | 调用模型生成 JSON 面试题，检查响应并校验题目、难度和知识点 |
+| `scripts/__init__.py` | 将学习脚本目录作为包，供测试导入 |
+| `tests/conftest.py` | 准备假配置，默认阻止测试直接发送模型请求 |
+| `tests/test_question_schema.py` | 5 个字段校验测试：正确样例、非法难度、缺少字段、空白题目、多余字段 |
+| `tests/test_model_call.py` | 3 个待完成的模拟响应测试，当前保留 skip |
 | `.env.example` | 模型配置模板，不含真实 Key；复制为被忽略的 `.env` 后在本机填写 |
 | `.gitignore` | 告诉 Git 哪些本机文件不应跟踪 |
 | `docs/day-01.md` | 第一天的步骤和验收标准 |
 | `docs/day-02.md` | 岗位列表、查询参数和参数校验练习 |
 | `docs/day-03.md` | 配置读取、模型 HTTP 请求与响应练习 |
 | `docs/day-04.md` | JSON 结构化输出、Pydantic 字段校验及失败情况练习 |
+| `docs/day-05.md` | pytest 断言、异常检查和模拟请求练习 |
 | `docs/learning-log.md` | 用自己的话填写学习记录 |
 
 ## 本地运行
@@ -86,6 +92,20 @@ uv run --env-file .env python scripts/structured_question.py
 本次真实调用生成了关于 `append()` 和 `extend()` 区别的题目，模型返回 `deepseek-flash`，结束原因为 `stop`，输入 169、输出 52、合计 221 Token。24 个本地模拟场景通过，覆盖请求错误、响应结构异常、截断、JSON 解析和字段校验。
 
 校验通过表示数据符合已声明的规则，题目内容与难度仍需人工检查。知识点目前检查元素类型和列表数量，尚未限制每个知识点字符串必须非空。
+
+## Day 5 自动化测试
+
+在学习项目根目录执行：
+
+```bash
+uv run python -m pytest -q
+```
+
+当前结果为 `5 passed, 3 skipped`。字段校验测试已完成；成功响应、非法 JSON 和截断这三个流程测试尚未实现，保留 skip 如实标记进度。Day 4 的 24 个模拟场景是助手的临时检查，不是当前仓库已有的 pytest 测试。
+
+下次继续 [Day 5 任务单第三关](docs/day-05.md#第三关用模拟响应测试-main)，从 `tests/test_model_call.py` 中的 `test_main_prints_valid_question()` 开始，练习 monkeypatch 和 capsys。
+
+测试环境使用假配置，默认阻止 `httpx.post` 发真实请求；流程测试由自己提供模拟响应。测试命令不需要加载 `.env` 或启动服务。
 
 ## 学习方式
 
