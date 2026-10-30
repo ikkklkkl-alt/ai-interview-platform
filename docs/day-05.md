@@ -2,18 +2,20 @@
 
 开始日期：2026-10-29。Day 4 已提交并推送，提交编号是 `b3c1dce`。
 
-昨天助手临时模拟了 24 个场景，仓库里还没有这些测试文件。今天开始把关键行为写成自己能解释、能重复运行的测试。
+Day 4 助手临时模拟了 24 个场景，仓库里没有对应的完整测试集。Day 5 开始把关键行为写成自己能解释、能重复运行的测试。
 
-## 当前进度与下次接续
+## 当前进度与复盘
 
-2026-10-29 先完成第一、二关，今天到这里休息。当前测试结果为 `5 passed, 3 skipped`，Day 5 尚未全部完成。
+2026-10-29 完成第一、二关并推送阶段成果 `26eacc0`，当时完整测试结果为 `5 passed, 3 skipped`。2026-10-30 完成第三、四关，完整测试结果为 `8 passed`，没有跳过的用例。本次仍属于 Day 5，未创建 Day 6。
 
 - 已完成：正确样例、非法难度、缺少 difficulty、空白题目、多余 answer 五个字段测试；体验断言失败、恢复通过以及预期异常被捕获。
-- 已整理：助手修正了 `assert 条件, 表达式` 的误用，将错误数量、字段位置和错误类型拆成独立断言，并统一缩进。
-- 2026-10-30 接着做第三关：打开 `tests/test_model_call.py`，从 `test_main_prints_valid_question()` 开始，构造模拟响应，再练习 monkeypatch 和 capsys。
-- 随后完成第四关的非法 JSON 和截断测试。三个流程测试当前保留 skip，尚未编写实现。
+- 第三关已完成：用 fake_post 返回模拟响应，调用真实 main，检查请求次数、URL、JSON 输出格式，以及题目、响应模型名和结束原因的输出。
+- 第四关已完成：分别验证正文不是 JSON、结束原因为 length 时提示并退出，不继续打印成功结果。截断测试使用完整、合格的题目 JSON。
+- 已练习：monkeypatch 替换外部请求，capsys 读取输出，pytest.raises 捕获 SystemExit，区分请求体与响应体。
+- 已排查：URL 期望值把点号误写成逗号；json.dumps 漏传对象；编辑器修改未保存。第一、二关整理时还纠正过把逗号误当作第二个断言条件的问题。
+- 待收尾：复盘测试边界，提交并推送本次续学成果。下面保留分步练习说明，供回顾使用。
 
-下次可先运行 `uv run python -m pytest -q` 确认当前进度，再继续下面的第三关，无需重做第一、二关。
+复盘时尝试不看示例解释：为什么只替换 httpx.post、为什么截断测试使用合法 JSON、为什么预期异常被正确抛出也是测试通过。只有注释的函数体会导致语法错误；仅写 pass 虽可消除语法错误，却没有验证行为。以后尚未开始的测试仍可用 skip 如实标记进度。
 
 ## 准备情况
 
@@ -21,7 +23,7 @@
 - `scripts/__init__.py` 将学习脚本目录明确作为包，方便导入。
 - `tests/test_question_schema.py` 放字段校验测试，`tests/test_model_call.py` 放调用流程测试。
 - `tests/conftest.py` 已准备假配置，并默认阻止测试直接使用 `httpx.post` 发请求。第三关由自己的模拟函数替代它。
-- 最初提供了 5 个带 skip 的测试入口；目前已完成并扩充字段测试，剩余 3 个调用流程入口仍为 skip。
+- 最初提供了 5 个带 skip 的测试入口；目前已扩充并完成 8 个测试，所有 skip 均已移除。
 
 pytest 会找到 `test_*.py` 中以 `test_` 开头的函数。今天在学习项目根目录使用 `uv run python -m pytest`，它使用项目的 Python 环境运行测试，也能从根目录导入脚本包。[pytest 入门](https://docs.pytest.org/en/stable/getting-started.html)
 
@@ -83,6 +85,37 @@ with pytest.raises(ValidationError) as exc_info:
 ```bash
 uv run python -m pytest tests/test_question_schema.py -q
 ```
+
+## 续学：先画流程，再确定测试边界
+
+本次目标：给程序一份确定的模型响应，验证它能正确提取、校验和输出面试题。
+
+当前 `scripts/structured_question.py` 的 `main()` 承担以下职责。这是已有代码的执行流程，还没有拆成独立的服务层、客户端层：
+
+```text
+读取配置 → 组装请求 → httpx.post → 检查状态码、解析外层响应
+                                    ↓
+                       检查结束原因、提取 content
+                                    ↓
+                       解析题目 JSON → Pydantic 校验 → 打印结果
+```
+
+| 职责 | 当前代码 | 本次测试怎么处理 |
+| --- | --- | --- |
+| 配置 | os.getenv | conftest.py 提供假配置 |
+| 与外部服务通信 | httpx.post | 用 fake_post 返回预先准备的响应 |
+| 解析和校验 | response.json、json.loads、model_validate | 执行已有真实代码 |
+| 展示结果 | print | 用 capsys 读取输出并断言 |
+
+`httpx.post` 是这次的外部依赖边界：正常运行时在这里访问模型服务，测试时从这里接入模拟响应。这样可以稳定复现成功、错误 JSON 和截断，不依赖网络或模型每次生成的内容。
+
+边界也限定了结论：测试通过能说明程序会怎样处理这些预设响应，不能证明真实服务可用、Key 有效或面试题质量足够好；真实调用需要另外验证。
+
+当前先保留脚本结构，弄清各部分职责。将来接入 FastAPI、出现复用需求时，再考虑让客户端负责通信、解析函数负责校验、接口或命令行负责展示。这是后续设计方向，尚未实现。拆分的依据是职责和变化原因，不是文件数量。
+
+动手前试着解释：如果把整个 `main()` 替换为直接返回成功的假函数，哪些已有逻辑就无法被这次测试验证了？
+
+相关面试问答仅供本地复习，不纳入 Git 版本管理；每题都区分当前进度和后续设计。
 
 ## 第三关：用模拟响应测试 main
 
@@ -148,6 +181,8 @@ uv run python -m pytest -q
 
 这些测试使用假配置和模拟响应，不需要 `--env-file .env`，也不需要启动 Uvicorn。mock 测试验证的是本地程序行为，真实服务的模型质量与可用性需要另外验证。
 
+2026-10-30 完成代码后的实际验证结果：`8 passed`。README 和学习记录已同步当前进度，面试问答另行保留在本地。
+
 今天完成的标准：
 
 - 正确样例、非法难度、缺少字段、空白题目、多余字段均有有效断言。
@@ -159,12 +194,12 @@ uv run python -m pytest -q
 
 ## 提交和推送
 
-本次先保存第一、二关的阶段成果，提交说明为 `test: add question validation tests and Day 5 checkpoint`。后续完成第三、四关时，可参考下面的完整提交命令：
+第一、二关已通过 `26eacc0` 保存并推送，提交说明为 `test: add question validation tests and Day 5 checkpoint`。第三、四关和本次文档更新尚未提交，可在检查改动后执行：
 
 ```bash
-git add pyproject.toml uv.lock scripts/__init__.py tests/conftest.py tests/test_question_schema.py tests/test_model_call.py README.md docs/day-05.md docs/learning-log.md
+git add .gitignore tests/test_model_call.py README.md docs/day-05.md docs/learning-log.md
 git --no-pager diff --cached --stat
-git commit -m "test: cover question validation and model responses"
+git commit -m "test: cover model response success and failures"
 git -c http.version=HTTP/1.1 push
 git status --short --branch
 ```

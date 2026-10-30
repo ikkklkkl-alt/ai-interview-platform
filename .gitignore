@@ -18,6 +18,9 @@ htmlcov/
 .vscode/
 *.log
 
+# 仅供本地复习的面试问答
+/docs/interview-notes.md
+
 # 未来功能产生的用户数据与构建产物
 uploads/
 backups/
