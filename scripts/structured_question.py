@@ -17,9 +17,13 @@ class InterviewQuestion(BaseModel):
     difficulty: Literal["easy","medium","hard"]
     knowledge_points: list[str] = Field(min_length=1,max_length=5)
 
-    # TODO：声明 question、difficulty、knowledge_points 三个必填字段。
+    #声明 question、difficulty、knowledge_points 三个必填字段。
     pass
 
+def parse_question_content(content:str) -> InterviewQuestion:
+    """解析模型正文，返回通过字段校验的题目。"""
+    question_data = json.loads(content)
+    return InterviewQuestion.model_validate(question_data)
 def main():
     api_key = os.getenv("DEEPSEEK_API_KEY","").strip()
     base_url = os.getenv("DEEPSEEK_BASE_URL","").strip()
@@ -119,13 +123,10 @@ def main():
         raise SystemExit("模型没有返回非空的文本内容")
 
     try:
-        question_data = json.loads(content)
+        data = parse_question_content(content)
     except json.JSONDecodeError:
         raise SystemExit("模型返回的内容不是有效的 JSON") from None
     
-    
-    try:
-        data = InterviewQuestion.model_validate(question_data)
     except ValidationError as exc:
         raise SystemExit(f"题目数据校验失败: \n{exc}") from None
     
@@ -138,3 +139,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
