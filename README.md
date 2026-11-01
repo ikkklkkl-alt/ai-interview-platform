@@ -10,10 +10,11 @@
 - Day 3 已完成并推送（`965c27e`）：独立脚本读取配置，用 `httpx` 调用真实 DeepSeek 模型，打印回答、结束原因和 Token 用量，并处理常见请求错误。
 - Day 4 已完成并推送（`b3c1dce`）：模型以 JSON 格式生成面试题，使用 Pydantic 校验字段，并处理响应结构异常、空正文、截断和解析失败。
 - Day 5 已完成并推送（`26eacc0`、`f404d29`）。5 个字段校验测试和 3 个模型调用流程测试全部通过。
-- Day 6 已提取 `parse_question_content()` 并在 `main()` 中使用。新增 3 个测试直接验证合法题目、正文解码失败和非法难度，全套测试结果为 `11 passed`。
+- Day 6 已完成并推送（`cdec64d`）。已提取 `parse_question_content()` 并在 `main()` 中使用。新增 3 个测试验证合法题目、正文解码失败和非法难度，全套测试结果为 `11 passed`。
+- Day 7 已通过本地验收。`POST /questions/preview` 接收已有题目正文，复用 Day 6 的解析函数，成功时返回题目，输入错误时返回 422。新增 4 个接口用例，全套测试结果为 `15 passed, 1 warning`。
 - 目前 Web 接口尚未接入模型、数据库、用户系统或前端。
 
-今天的练习见 [Day 6 任务单](docs/day-06.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md) 和 [Day 5](docs/day-05.md)。
+今天的练习见 [Day 7 任务单](docs/day-07.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md) 和 [Day 6](docs/day-06.md)。
 
 ## 第一版范围
 
@@ -35,7 +36,7 @@
 | `.python-version` | 指定本地开发使用的 Python 次版本 |
 | `uv.lock` | 记录解析出的确切依赖版本，应提交到 Git |
 | `.venv/` | 本机虚拟环境，不提交到 Git |
-| `app/main.py` | 健康检查、岗位列表和查询参数校验 |
+| `app/main.py` | 健康检查、岗位列表、查询参数校验和题目预览接口 |
 | `scripts/first_model_call.py` | 独立调用 DeepSeek，读取回答与用量，处理超时、连接及 HTTP 状态错误 |
 | `scripts/structured_question.py` | 调用模型生成 JSON 面试题，检查响应并校验题目、难度和知识点 |
 | `scripts/__init__.py` | 将学习脚本目录作为包，供测试导入 |
@@ -43,6 +44,7 @@
 | `tests/test_question_schema.py` | 5 个字段校验测试：正确样例、非法难度、缺少字段、空白题目、多余字段 |
 | `tests/test_model_call.py` | 模拟成功响应、非法 JSON 和截断；检查请求参数、输出和退出提示 |
 | `tests/test_question_content.py` | 直接验证解析函数返回的题目对象和两类异常 |
+| `tests/test_question_preview.py` | 从 HTTP 入口检查预览成功、缺少正文、正文解码错误和非法难度 |
 | `.env.example` | 模型配置模板，不含真实 Key；复制为被忽略的 `.env` 后在本机填写 |
 | `.gitignore` | 告诉 Git 哪些本机文件不应跟踪 |
 | `docs/day-01.md` | 第一天的步骤和验收标准 |
@@ -51,6 +53,7 @@
 | `docs/day-04.md` | JSON 结构化输出、Pydantic 字段校验及失败情况练习 |
 | `docs/day-05.md` | pytest 断言、异常检查和模拟请求练习 |
 | `docs/day-06.md` | 提取正文解析函数，练习分配解析与命令行展示的职责 |
+| `docs/day-07.md` | 题目预览接口的请求样例、响应约定和验收步骤 |
 | `docs/learning-log.md` | 用自己的话填写学习记录 |
 
 ## 本地运行

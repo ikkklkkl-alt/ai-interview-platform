@@ -18,7 +18,6 @@ class InterviewQuestion(BaseModel):
     knowledge_points: list[str] = Field(min_length=1,max_length=5)
 
     #声明 question、difficulty、knowledge_points 三个必填字段。
-    pass
 
 def parse_question_content(content:str) -> InterviewQuestion:
     """解析模型正文，返回通过字段校验的题目。"""
