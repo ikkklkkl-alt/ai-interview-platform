@@ -1,8 +1,9 @@
 from typing import Annotated
-from fastapi import FastAPI,Query,HTTPException
+from fastapi import FastAPI,Query,HTTPException,UploadFile
 
 from pydantic import BaseModel,Field,ValidationError
 from scripts.structured_question import InterviewQuestion,parse_question_content
+from app.resume_text import decode_resume_text
 
 import json
 
@@ -35,3 +36,20 @@ def preview_question(payload: QuestionPreviewRequest):
         raise HTTPException(status_code=422,detail="题目正文不是有效的 JSON",) from None
     except ValidationError:
         raise HTTPException(status_code=422,detail="题目字段不符合规则")
+
+@app.post("/resumes/preview")
+async def preview_resume(file: UploadFile):
+    filename = file.filename or ""
+    if not filename.lower().endswith((".txt",".md")):
+        raise HTTPException(status_code=415,detail="只支持 TXT 或 Markdown文件")
+    limit = 256 * 1024
+    raw = await file.read(limit + 1)
+    if len(raw) > limit:
+        raise HTTPException(status_code=413,detail="简历文件太大")
+    try:
+        text = decode_resume_text(raw)
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=422,detail="请使用 UTF-8 编码保存简历") from None
+    except ValueError as exc:
+        raise HTTPException(status_code=422,detail=str(exc))
+    return {"filename": file.filename,"text": text}
