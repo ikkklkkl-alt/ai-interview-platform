@@ -1,0 +1,45 @@
+import pytest
+
+from pydantic import ValidationError
+from app.resume_profile import ResumeProfile,check_profile_evidence
+
+def test_rejects_skill_evidence_missing_from_source():
+    source_text = "我用 FastAPI 实现了文件上传。"
+
+    profile = ResumeProfile.model_validate({
+        "skills": [{"name": "FastAPI",
+                    "evidence":"我用 FastAPI 实现了文件下载。"}],
+        "projects": [],
+    })
+
+    with pytest.raises(ValueError,match="FastAPI"):
+        check_profile_evidence(profile,source_text)
+
+def test_accepts_skill_evidence_found_in_source():
+    source_text = "我用 FastAPI 实现了文件上传。"
+
+    profile = ResumeProfile.model_validate({
+        "skills": [{"name": "FastAPI",
+                    "evidence":"我用 FastAPI 实现了文件上传。"}],
+        "projects": [],
+    })
+
+
+    assert check_profile_evidence(profile,source_text) is None
+
+def test_accept_empty_profile():
+    data = {"skills": [], "projects": []}
+
+    profile = ResumeProfile.model_validate(data)
+
+    assert profile.model_dump() == data
+
+def test_rejects_missing_skills():
+    data = {"projects": []}
+
+    with pytest.raises(ValidationError) as exc:
+        ResumeProfile.model_validate(data)
+
+    error = exc.value.errors()[0]
+    assert error["loc"] == ("skills",)
+    assert error["type"] == "missing"

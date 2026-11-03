@@ -12,10 +12,11 @@
 - Day 5 已完成并推送（`26eacc0`、`f404d29`）。5 个字段校验测试和 3 个模型调用流程测试全部通过。
 - Day 6 已完成并推送（`cdec64d`）。已提取 `parse_question_content()` 并在 `main()` 中使用。新增 3 个测试验证合法题目、正文解码失败和非法难度，全套测试结果为 `11 passed`。
 - Day 7 已完成并推送（`e6babf7`）。`POST /questions/preview` 接收已有题目正文，复用 Day 6 的解析函数，成功时返回题目，输入错误时返回 422。新增 4 个接口用例，全套测试结果为 `15 passed, 1 warning`。
-- Day 8 已通过本地验收。`POST /resumes/preview` 接受不超过 256 KiB 的 UTF-8 TXT / Markdown 简历，返回文件名与原文，保留缩进和换行。新增 3 个解码用例和 6 个接口用例，全套测试为 `24 passed, 1 warning`。
+- Day 8 已完成并推送（`ec4609c`）。`POST /resumes/preview` 接受不超过 256 KiB 的 UTF-8 TXT / Markdown 简历，返回文件名与原文，保留缩进和换行。新增 3 个解码用例和 6 个接口用例，全套测试为 `24 passed, 1 warning`。
+- Day 9 进行中。已实现简历画像的字段校验和引文核对，4 个画像测试通过。下次从纯空白引文的测试接着做。
 - 目前 Web 接口尚未接入模型、数据库、用户系统或前端。
 
-今天的练习见 [Day 8 任务单](docs/day-08.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md) 和 [Day 7](docs/day-07.md)。
+今天的练习见 [Day 9 任务单](docs/day-09.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md)、[Day 7](docs/day-07.md) 和 [Day 8](docs/day-08.md)。
 
 ## 第一版范围
 
@@ -39,6 +40,7 @@
 | `.venv/` | 本机虚拟环境，不提交到 Git |
 | `app/main.py` | 健康检查、岗位列表、题目预览和简历上传预览接口 |
 | `app/resume_text.py` | 将简历字节解码为原文，保留格式并拒绝纯空白正文 |
+| `app/resume_profile.py` | 定义技能和项目的数据结构，逐项核对引文是否出现在简历原文中 |
 | `scripts/first_model_call.py` | 独立调用 DeepSeek，读取回答与用量，处理超时、连接及 HTTP 状态错误 |
 | `scripts/structured_question.py` | 调用模型生成 JSON 面试题，检查响应并校验题目、难度和知识点 |
 | `scripts/__init__.py` | 将学习脚本目录作为包，供测试导入 |
@@ -49,6 +51,7 @@
 | `tests/test_question_preview.py` | 从 HTTP 入口检查预览成功、缺少正文、正文解码错误和非法难度 |
 | `tests/test_resume_text.py` | 直接检查简历解码、原文格式和异常原因 |
 | `tests/test_resume_preview.py` | 从上传入口检查成功响应、文件后缀、大小边界以及两种正文错误 |
+| `tests/test_resume_profile.py` | 检查技能引文与原文是否相符，以及空列表和缺字段的处理 |
 | `.env.example` | 模型配置模板，不含真实 Key；复制为被忽略的 `.env` 后在本机填写 |
 | `.gitignore` | 告诉 Git 哪些本机文件不应跟踪 |
 | `docs/day-01.md` | 第一天的步骤和验收标准 |
@@ -59,6 +62,7 @@
 | `docs/day-06.md` | 提取正文解析函数，练习分配解析与命令行展示的职责 |
 | `docs/day-07.md` | 题目预览接口的请求样例、响应约定和验收步骤 |
 | `docs/day-08.md` | 简历原文解码、文件上传和预览验收练习 |
+| `docs/day-09.md` | 简历画像的字段设计、原文依据和校验练习 |
 | `docs/learning-log.md` | 用自己的话填写学习记录 |
 
 ## 本地运行

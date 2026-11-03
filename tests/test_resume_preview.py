@@ -45,7 +45,7 @@ def test_preview_accepts_file_at_size_limit():
     assert response.status_code ==200
     assert response.json()["text"] == raw.decode("ascii")
 
-def test_preview_accepts_file_over_size_limit():
+def test_preview_rejects_file_over_size_limit():
     raw = b"a" * (256 * 1024 + 1)
 
     with TestClient(app) as client:
