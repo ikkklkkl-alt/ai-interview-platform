@@ -24,6 +24,8 @@ def test_accepts_skill_evidence_found_in_source():
         "projects": [],
     })
 
+    assert profile.skills[0].name == "FastAPI"
+    assert profile.skills[0].evidence == source_text
 
     assert check_profile_evidence(profile,source_text) is None
 
@@ -43,3 +45,14 @@ def test_rejects_missing_skills():
     error = exc.value.errors()[0]
     assert error["loc"] == ("skills",)
     assert error["type"] == "missing"
+
+def test_rejects_blank_skill_evidence():
+    data = {"skills": [{"name": "FastAPI","evidence":"   "}],
+            "projects": [],}
+
+    with pytest.raises(ValidationError) as exc:
+        ResumeProfile.model_validate(data)
+
+    error = exc.value.errors()[0]
+    assert error["loc"] == ("skills",0,"evidence")
+    assert error["type"] == "string_too_short"

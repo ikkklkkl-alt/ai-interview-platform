@@ -13,7 +13,7 @@
 - Day 6 已完成并推送（`cdec64d`）。已提取 `parse_question_content()` 并在 `main()` 中使用。新增 3 个测试验证合法题目、正文解码失败和非法难度，全套测试结果为 `11 passed`。
 - Day 7 已完成并推送（`e6babf7`）。`POST /questions/preview` 接收已有题目正文，复用 Day 6 的解析函数，成功时返回题目，输入错误时返回 422。新增 4 个接口用例，全套测试结果为 `15 passed, 1 warning`。
 - Day 8 已完成并推送（`ec4609c`）。`POST /resumes/preview` 接受不超过 256 KiB 的 UTF-8 TXT / Markdown 简历，返回文件名与原文，保留缩进和换行。新增 3 个解码用例和 6 个接口用例，全套测试为 `24 passed, 1 warning`。
-- Day 9 进行中。已实现简历画像的字段校验和引文核对，4 个画像测试通过。下次从纯空白引文的测试接着做。
+- Day 9 已通过本地验收。用手工样例验证简历画像的字段和引文，5 个画像测试通过，全套测试为 `29 passed, 1 warning`。
 - 目前 Web 接口尚未接入模型、数据库、用户系统或前端。
 
 今天的练习见 [Day 9 任务单](docs/day-09.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md)、[Day 7](docs/day-07.md) 和 [Day 8](docs/day-08.md)。
