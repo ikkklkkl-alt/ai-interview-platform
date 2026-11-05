@@ -1,7 +1,8 @@
 import pytest
+import json
 
 from pydantic import ValidationError
-from app.resume_profile import ResumeProfile,check_profile_evidence
+from app.resume_profile import ResumeProfile,check_profile_evidence,parse_profile_content
 
 def test_rejects_skill_evidence_missing_from_source():
     source_text = "我用 FastAPI 实现了文件上传。"
@@ -56,3 +57,42 @@ def test_rejects_blank_skill_evidence():
     error = exc.value.errors()[0]
     assert error["loc"] == ("skills",0,"evidence")
     assert error["type"] == "string_too_short"
+
+def test_parse_valid_profile_content():
+    source_text = "我用 FastAPI 实现了文件上传。"
+    sample = {
+        "skills": [{"name": "FastAPI","evidence": source_text}],
+        "projects": [],
+    }
+
+    content = json.dumps(sample,ensure_ascii=False)
+    profile = parse_profile_content(content,source_text)
+
+    assert isinstance(profile,ResumeProfile)
+    assert profile.model_dump() == sample
+
+def test_parse_invalid_profile_json():
+    source_text = "我用 FastAPI 实现了文件上传。"
+
+    with pytest.raises(json.JSONDecodeError):
+        parse_profile_content("这是一份简历画像",source_text)
+
+def test_parse_profile_missing_skills():
+    source_text = "我用 FastAPI 实现了文件上传。"
+    content = json.dumps({"projects": []})
+    with pytest.raises(ValidationError) as exc:
+        parse_profile_content(content,source_text)
+    error = exc.value.errors()[0]
+    assert error["loc"] == ("skills",)
+    assert error["type"] == "missing"
+
+def test_parse_profile_rejects_changed_evidence():
+    source_text = "我用 FastAPI 实现了文件上传。"
+    sample = {
+        "skills": [{"name": "FastAPI","evidence": "我用 FastAPI 实现了文件下载。"}],
+        "projects": [],
+    }
+
+    content = json.dumps(sample,ensure_ascii=False)
+    with pytest.raises(ValueError,match="FastAPI"):
+        parse_profile_content(content,source_text)

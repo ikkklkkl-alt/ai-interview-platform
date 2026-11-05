@@ -13,10 +13,11 @@
 - Day 6 已完成并推送（`cdec64d`）。已提取 `parse_question_content()` 并在 `main()` 中使用。新增 3 个测试验证合法题目、正文解码失败和非法难度，全套测试结果为 `11 passed`。
 - Day 7 已完成并推送（`e6babf7`）。`POST /questions/preview` 接收已有题目正文，复用 Day 6 的解析函数，成功时返回题目，输入错误时返回 422。新增 4 个接口用例，全套测试结果为 `15 passed, 1 warning`。
 - Day 8 已完成并推送（`ec4609c`）。`POST /resumes/preview` 接受不超过 256 KiB 的 UTF-8 TXT / Markdown 简历，返回文件名与原文，保留缩进和换行。新增 3 个解码用例和 6 个接口用例，全套测试为 `24 passed, 1 warning`。
-- Day 9 已通过本地验收。用手工样例验证简历画像的字段和引文，5 个画像测试通过，全套测试为 `29 passed, 1 warning`。
+- Day 9 已完成并推送（`c72347b`、`ab66620`）。用手工样例验证简历画像的字段和引文，5 个画像测试通过，全套测试为 `29 passed, 1 warning`。
+- Day 10 已通过本地验收。命令行调用 DeepSeek 提取虚构简历的候选画像，再校验字段和引文。新增 4 个解析测试，全套测试为 `33 passed, 1 warning`。本次真实调用提取出 FastAPI、pytest 和简历预览工具，正确排除了计划学习的 Redis。
 - 目前 Web 接口尚未接入模型、数据库、用户系统或前端。
 
-今天的练习见 [Day 9 任务单](docs/day-09.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md)、[Day 7](docs/day-07.md) 和 [Day 8](docs/day-08.md)。
+今天的练习见 [Day 10 任务单](docs/day-10.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md)、[Day 7](docs/day-07.md)、[Day 8](docs/day-08.md) 和 [Day 9](docs/day-09.md)。
 
 ## 第一版范围
 
@@ -40,9 +41,10 @@
 | `.venv/` | 本机虚拟环境，不提交到 Git |
 | `app/main.py` | 健康检查、岗位列表、题目预览和简历上传预览接口 |
 | `app/resume_text.py` | 将简历字节解码为原文，保留格式并拒绝纯空白正文 |
-| `app/resume_profile.py` | 定义技能和项目的数据结构，逐项核对引文是否出现在简历原文中 |
+| `app/resume_profile.py` | 解析画像 JSON，校验技能和项目字段，逐项核对引文是否出现在原文中 |
 | `scripts/first_model_call.py` | 独立调用 DeepSeek，读取回答与用量，处理超时、连接及 HTTP 状态错误 |
 | `scripts/structured_question.py` | 调用模型生成 JSON 面试题，检查响应并校验题目、难度和知识点 |
+| `scripts/extract_resume_profile.py` | 调用模型提取虚构简历画像，核对结果并打印模型名和 Token 用量 |
 | `scripts/__init__.py` | 将学习脚本目录作为包，供测试导入 |
 | `tests/conftest.py` | 准备假配置，默认阻止测试直接发送模型请求 |
 | `tests/test_question_schema.py` | 5 个字段校验测试：正确样例、非法难度、缺少字段、空白题目、多余字段 |
@@ -51,7 +53,7 @@
 | `tests/test_question_preview.py` | 从 HTTP 入口检查预览成功、缺少正文、正文解码错误和非法难度 |
 | `tests/test_resume_text.py` | 直接检查简历解码、原文格式和异常原因 |
 | `tests/test_resume_preview.py` | 从上传入口检查成功响应、文件后缀、大小边界以及两种正文错误 |
-| `tests/test_resume_profile.py` | 检查技能引文与原文是否相符，以及空列表和缺字段的处理 |
+| `tests/test_resume_profile.py` | 5 个画像规则用例和 4 个解析用例，覆盖正常结果及解码、字段和引文错误 |
 | `.env.example` | 模型配置模板，不含真实 Key；复制为被忽略的 `.env` 后在本机填写 |
 | `.gitignore` | 告诉 Git 哪些本机文件不应跟踪 |
 | `docs/day-01.md` | 第一天的步骤和验收标准 |
@@ -63,6 +65,7 @@
 | `docs/day-07.md` | 题目预览接口的请求样例、响应约定和验收步骤 |
 | `docs/day-08.md` | 简历原文解码、文件上传和预览验收练习 |
 | `docs/day-09.md` | 简历画像的字段设计、原文依据和校验练习 |
+| `docs/day-10.md` | 从模型消息正文解析候选画像，对照原文验证提取结果 |
 | `docs/learning-log.md` | 用自己的话填写学习记录 |
 
 ## 本地运行
@@ -123,6 +126,20 @@ uv run python -m pytest -q
 Day 5 通过模拟请求测试整个命令行流程。Day 6 又把正文解码与字段校验提取成独立函数，命令行负责打印成功结果或将异常转换成退出提示。[Day 5 任务单](docs/day-05.md) · [Day 6 任务单](docs/day-06.md)
 
 测试环境使用假配置，默认阻止 `httpx.post` 发真实请求；流程测试由自己提供模拟响应。测试命令不需要加载 `.env` 或启动服务。
+
+## Day 10 简历画像提取
+
+在学习项目根目录执行以下命令，使用本机配置处理脚本里的虚构简历。
+
+```bash
+uv run --env-file .env python -m scripts.extract_resume_profile
+```
+
+2026-11-05 的真实调用返回 HTTP 200，模型名为 `deepseek-flash`，结束原因为 `stop`。输入 267、输出 56、合计 323 Token。返回的两项技能和一个项目均带有原文引文。
+
+解析函数负责 JSON 解码、字段校验和引文核对。命令行负责发送请求、检查模型是否正常结束、把异常转换成退出提示。人工结合上下文判断原句是否支持提取出的结论。
+
+本次另有 5 个完整脚本的临时模拟场景通过，覆盖合法画像、无效正文 JSON、缺少 skills、引文被改写，以及正文合法但被标记截断。仓库中的 `33` 个 pytest 用例单独统计。
 
 ## 学习方式
 

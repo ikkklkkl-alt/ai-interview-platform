@@ -1,3 +1,5 @@
+import json
+
 from pydantic import BaseModel,ConfigDict,Field
 
 class ProfileItem(BaseModel):
@@ -16,3 +18,9 @@ def check_profile_evidence(profile: ResumeProfile,source_text: str) -> None:
     for item in profile.skills + profile.projects:
         if item.evidence not in source_text:
             raise ValueError(item.name)
+
+def parse_profile_content(content: str,source_text: str) -> ResumeProfile:
+    data = json.loads(content)
+    profile = ResumeProfile.model_validate(data)
+    check_profile_evidence(profile,source_text)
+    return profile
