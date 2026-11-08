@@ -14,10 +14,11 @@
 - Day 7 已完成并推送（`e6babf7`）。`POST /questions/preview` 接收已有题目正文，复用 Day 6 的解析函数，成功时返回题目，输入错误时返回 422。新增 4 个接口用例，全套测试结果为 `15 passed, 1 warning`。
 - Day 8 已完成并推送（`ec4609c`）。`POST /resumes/preview` 接受不超过 256 KiB 的 UTF-8 TXT / Markdown 简历，返回文件名与原文，保留缩进和换行。新增 3 个解码用例和 6 个接口用例，全套测试为 `24 passed, 1 warning`。
 - Day 9 已完成并推送（`c72347b`、`ab66620`）。用手工样例验证简历画像的字段和引文，5 个画像测试通过，全套测试为 `29 passed, 1 warning`。
-- Day 10 已通过本地验收。命令行调用 DeepSeek 提取虚构简历的候选画像，再校验字段和引文。新增 4 个解析测试，全套测试为 `33 passed, 1 warning`。本次真实调用提取出 FastAPI、pytest 和简历预览工具，正确排除了计划学习的 Redis。
+- Day 10 已完成并推送（`1ab8087`）。命令行调用 DeepSeek 提取虚构简历的候选画像，再校验字段和引文。新增 4 个解析测试，全套测试为 `33 passed, 1 warning`。本次真实调用提取出 FastAPI、pytest 和简历预览工具，正确排除了计划学习的 Redis。
+- Day 11 已通过本地验收。画像提取函数接收原文，返回画像及调用信息，用 `ResumeExtractionError` 报告失败。命令行负责打印和退出提示。新增 4 个提取函数测试和 2 个命令行测试，全套测试为 `39 passed, 1 warning`。
 - 目前 Web 接口尚未接入模型、数据库、用户系统或前端。
 
-今天的练习见 [Day 10 任务单](docs/day-10.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md)、[Day 7](docs/day-07.md)、[Day 8](docs/day-08.md) 和 [Day 9](docs/day-09.md)。
+今天的练习见 [Day 11 任务单](docs/day-11.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md)、[Day 7](docs/day-07.md)、[Day 8](docs/day-08.md)、[Day 9](docs/day-09.md) 和 [Day 10](docs/day-10.md)。
 
 ## 第一版范围
 
@@ -42,9 +43,10 @@
 | `app/main.py` | 健康检查、岗位列表、题目预览和简历上传预览接口 |
 | `app/resume_text.py` | 将简历字节解码为原文，保留格式并拒绝纯空白正文 |
 | `app/resume_profile.py` | 解析画像 JSON，校验技能和项目字段，逐项核对引文是否出现在原文中 |
+| `app/resume_extraction.py` | 请求模型并校验响应，返回提取结果或抛出提取异常 |
 | `scripts/first_model_call.py` | 独立调用 DeepSeek，读取回答与用量，处理超时、连接及 HTTP 状态错误 |
 | `scripts/structured_question.py` | 调用模型生成 JSON 面试题，检查响应并校验题目、难度和知识点 |
-| `scripts/extract_resume_profile.py` | 调用模型提取虚构简历画像，核对结果并打印模型名和 Token 用量 |
+| `scripts/extract_resume_profile.py` | 准备虚构简历，调用提取函数，打印结果并将失败转换为退出提示 |
 | `scripts/__init__.py` | 将学习脚本目录作为包，供测试导入 |
 | `tests/conftest.py` | 准备假配置，默认阻止测试直接发送模型请求 |
 | `tests/test_question_schema.py` | 5 个字段校验测试：正确样例、非法难度、缺少字段、空白题目、多余字段 |
@@ -54,6 +56,8 @@
 | `tests/test_resume_text.py` | 直接检查简历解码、原文格式和异常原因 |
 | `tests/test_resume_preview.py` | 从上传入口检查成功响应、文件后缀、大小边界以及两种正文错误 |
 | `tests/test_resume_profile.py` | 5 个画像规则用例和 4 个解析用例，覆盖正常结果及解码、字段和引文错误 |
+| `tests/test_resume_extraction.py` | 模拟 HTTP 请求，检查传入原文、返回数据、超时、截断和引文错误 |
+| `tests/test_resume_extraction_cli.py` | 模拟提取函数，检查命令行成功输出和失败退出 |
 | `.env.example` | 模型配置模板，不含真实 Key；复制为被忽略的 `.env` 后在本机填写 |
 | `.gitignore` | 告诉 Git 哪些本机文件不应跟踪 |
 | `docs/day-01.md` | 第一天的步骤和验收标准 |
@@ -66,6 +70,7 @@
 | `docs/day-08.md` | 简历原文解码、文件上传和预览验收练习 |
 | `docs/day-09.md` | 简历画像的字段设计、原文依据和校验练习 |
 | `docs/day-10.md` | 从模型消息正文解析候选画像，对照原文验证提取结果 |
+| `docs/day-11.md` | 提取函数与命令行的职责划分，以及返回值、异常和复用测试 |
 | `docs/learning-log.md` | 用自己的话填写学习记录 |
 
 ## 本地运行
