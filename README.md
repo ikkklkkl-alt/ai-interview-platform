@@ -15,10 +15,11 @@
 - Day 8 已完成并推送（`ec4609c`）。`POST /resumes/preview` 接受不超过 256 KiB 的 UTF-8 TXT / Markdown 简历，返回文件名与原文，保留缩进和换行。新增 3 个解码用例和 6 个接口用例，全套测试为 `24 passed, 1 warning`。
 - Day 9 已完成并推送（`c72347b`、`ab66620`）。用手工样例验证简历画像的字段和引文，5 个画像测试通过，全套测试为 `29 passed, 1 warning`。
 - Day 10 已完成并推送（`1ab8087`）。命令行调用 DeepSeek 提取虚构简历的候选画像，再校验字段和引文。新增 4 个解析测试，全套测试为 `33 passed, 1 warning`。本次真实调用提取出 FastAPI、pytest 和简历预览工具，正确排除了计划学习的 Redis。
-- Day 11 已通过本地验收。画像提取函数接收原文，返回画像及调用信息，用 `ResumeExtractionError` 报告失败。命令行负责打印和退出提示。新增 4 个提取函数测试和 2 个命令行测试，全套测试为 `39 passed, 1 warning`。
-- 目前 Web 接口尚未接入模型、数据库、用户系统或前端。
+- Day 11 已完成并推送（`1a8ffbd`）。画像提取函数接收原文，返回画像及调用信息，用 `ResumeExtractionError` 报告失败。命令行负责打印和退出提示。新增 4 个提取函数测试和 2 个命令行测试，全套测试为 `39 passed, 1 warning`。
+- Day 12 已完成本地验收，待提交。`POST /resumes/extract` 接收简历正文，复用提取函数返回画像；无效输入返回 422，提取失败返回 503。新增 5 个接口用例，全套测试为 `44 passed, 1 warning`。已在 `/docs` 中验证真实提取，返回 HTTP 200，三条引文均与原文一致。
+- 当前 Web 接口已接入模型；数据库、用户系统和前端页面尚未实现。
 
-今天的练习见 [Day 11 任务单](docs/day-11.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md)、[Day 7](docs/day-07.md)、[Day 8](docs/day-08.md)、[Day 9](docs/day-09.md) 和 [Day 10](docs/day-10.md)。
+今天的练习见 [Day 12 任务单](docs/day-12.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md)、[Day 7](docs/day-07.md)、[Day 8](docs/day-08.md)、[Day 9](docs/day-09.md)、[Day 10](docs/day-10.md) 和 [Day 11](docs/day-11.md)。
 
 ## 第一版范围
 
@@ -40,7 +41,7 @@
 | `.python-version` | 指定本地开发使用的 Python 次版本 |
 | `uv.lock` | 记录解析出的确切依赖版本，应提交到 Git |
 | `.venv/` | 本机虚拟环境，不提交到 Git |
-| `app/main.py` | 健康检查、岗位列表、题目预览和简历上传预览接口 |
+| `app/main.py` | 健康检查、岗位列表、题目预览、简历上传预览和画像提取接口 |
 | `app/resume_text.py` | 将简历字节解码为原文，保留格式并拒绝纯空白正文 |
 | `app/resume_profile.py` | 解析画像 JSON，校验技能和项目字段，逐项核对引文是否出现在原文中 |
 | `app/resume_extraction.py` | 请求模型并校验响应，返回提取结果或抛出提取异常 |
@@ -58,6 +59,7 @@
 | `tests/test_resume_profile.py` | 5 个画像规则用例和 4 个解析用例，覆盖正常结果及解码、字段和引文错误 |
 | `tests/test_resume_extraction.py` | 模拟 HTTP 请求，检查传入原文、返回数据、超时、截断和引文错误 |
 | `tests/test_resume_extraction_cli.py` | 模拟提取函数，检查命令行成功输出和失败退出 |
+| `tests/test_resume_extraction_api.py` | 模拟提取函数，检查画像响应、503 提示，以及三种无效输入在调用前被拒绝 |
 | `.env.example` | 模型配置模板，不含真实 Key；复制为被忽略的 `.env` 后在本机填写 |
 | `.gitignore` | 告诉 Git 哪些本机文件不应跟踪 |
 | `docs/day-01.md` | 第一天的步骤和验收标准 |
@@ -71,22 +73,23 @@
 | `docs/day-09.md` | 简历画像的字段设计、原文依据和校验练习 |
 | `docs/day-10.md` | 从模型消息正文解析候选画像，对照原文验证提取结果 |
 | `docs/day-11.md` | 提取函数与命令行的职责划分，以及返回值、异常和复用测试 |
+| `docs/day-12.md` | 简历画像 HTTP 接口的请求校验、异常转换和网页验收 |
 | `docs/learning-log.md` | 用自己的话填写学习记录 |
 
 ## 本地运行
 
-在学习项目目录执行：
+首次运行时，将 `.env.example` 复制为本目录的 `.env`，在本机填写模型配置；已有配置可以继续使用。在学习项目目录执行：
 
 ```bash
 uv sync --locked
-uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8002
+uv run --env-file .env uvicorn app.main:app --reload --host 127.0.0.1 --port 8002
 ```
 
 8001 被其他服务占用，目前使用 8002。打开：
 
-- http://127.0.0.1:8002/health
-- http://127.0.0.1:8002/interview-directions
-- http://127.0.0.1:8002/docs
+- [健康检查](http://127.0.0.1:8002/health)
+- [岗位列表](http://127.0.0.1:8002/interview-directions)
+- [接口文档](http://127.0.0.1:8002/docs)
 
 `/health` 返回健康检查结果，`/interview-directions?limit=2` 返回前两条岗位数据。根路径 `/` 没有定义接口，访问它返回 404。
 
@@ -142,9 +145,25 @@ uv run --env-file .env python -m scripts.extract_resume_profile
 
 2026-11-05 的真实调用返回 HTTP 200，模型名为 `deepseek-flash`，结束原因为 `stop`。输入 267、输出 56、合计 323 Token。返回的两项技能和一个项目均带有原文引文。
 
-解析函数负责 JSON 解码、字段校验和引文核对。命令行负责发送请求、检查模型是否正常结束、把异常转换成退出提示。人工结合上下文判断原句是否支持提取出的结论。
+解析函数负责 JSON 解码、字段校验和引文核对。Day 11 已把模型请求和响应检查移到提取函数，命令行负责打印结果和转换退出提示。人工结合上下文判断原句是否支持提取出的结论。
 
 本次另有 5 个完整脚本的临时模拟场景通过，覆盖合法画像、无效正文 JSON、缺少 skills、引文被改写，以及正文合法但被标记截断。仓库中的 `33` 个 pytest 用例单独统计。
+
+## Day 12 通过 HTTP 提取画像
+
+按“本地运行”启动服务，在 `/docs` 中展开 `POST /resumes/extract`，点击 Try it out，填写请求体并 Execute：
+
+```json
+{
+  "text": "项目：简历预览工具。\n我用 FastAPI 实现了文件上传，用 pytest 验证了空文件的处理。\n接下来想学 Redis。"
+}
+```
+
+成功时返回包含 `skills` 和 `projects` 的画像。缺少 `text`、类型错误、空字符串或纯空白正文返回 422；提取函数报告失败时，接口统一返回 503 和“简历画像提取暂时不可用，请稍后重试”。有效请求会使用本机配置调用真实模型。
+
+2026-11-10 的网页验收返回 HTTP 200，提取出 FastAPI、pytest 和简历预览工具，排除了计划学习的 Redis。三条引文均与原文一致。这是本次样例的验证结果，后续仍需结合上下文检查候选画像。
+
+新增 5 个接口用例覆盖成功、提取失败、缺少正文、空字符串和纯空白正文。全套离线测试为 `44 passed, 1 warning`，警告来自测试客户端依赖。步骤和实际响应见 [Day 12 任务单](docs/day-12.md)。
 
 ## 学习方式
 

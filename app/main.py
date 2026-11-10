@@ -1,9 +1,16 @@
 from typing import Annotated
 from fastapi import FastAPI,Query,HTTPException,UploadFile
 
-from pydantic import BaseModel,Field,ValidationError
+from pydantic import BaseModel,Field,ValidationError,field_validator
 from scripts.structured_question import InterviewQuestion,parse_question_content
 from app.resume_text import decode_resume_text
+
+
+from app.resume_extraction import (
+    ResumeExtractionError,
+    extract_resume_profile,
+)
+from app.resume_profile import ResumeProfile
 
 import json
 
@@ -53,3 +60,26 @@ async def preview_resume(file: UploadFile):
     except ValueError as exc:
         raise HTTPException(status_code=422,detail=str(exc))
     return {"filename": file.filename,"text": text}
+
+class ResumeExtractionRequest(BaseModel):
+    text: str = Field(min_length=1)
+
+    @field_validator("text")
+    @classmethod
+    def validate_non_blank_text(cls,value: str) -> str:
+        if not value.strip():
+            raise ValueError("简历正文不能为空")
+        return value
+
+@app.post("/resumes/extract",response_model=ResumeProfile)
+def extract_resume(payload: ResumeExtractionRequest):
+    try:
+        result = extract_resume_profile(payload.text)
+
+    except ResumeExtractionError:
+        raise HTTPException(
+            status_code=503,
+            detail="简历画像提取暂时不可用，请稍后重试",
+        ) from None
+
+    return result.profile
