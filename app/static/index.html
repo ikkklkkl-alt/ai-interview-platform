@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>简历画像确认</title>
+</head>
+<body>
+    <main>
+        <h1>简历画像确认</h1>
+        <label for="resume-text">简历原文</label>
+        <textarea id="resume-text"></textarea>
+        <button type="button" id="extract-button">读取简历</button>
+        <pre id="result"></pre>
+        <button type="button" id="confirm-button" disabled>确认画像</button>
+        <pre id="confirmation"></pre>
+    </main>
+    <script>
+        function createProfileOption(item,group) {
+            const label = document.createElement("label");
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.name = group;
+            checkbox.value = JSON.stringify(item);
+
+            label.append(checkbox," " + item.name + " (" + item.evidence + ") ");
+            return label;
+        }
+        async function readResumeText() {
+            const text = document.getElementById("resume-text").value;
+            const requestBody = JSON.stringify({ text: text });
+            const response = await fetch("/resumes/extract",{
+                method: "POST",
+                headers: { "Content-Type": "application/json"},
+                body: requestBody
+            });
+
+            const data = await response.json();
+            const result = document.getElementById("result");
+            clearConfirmation();
+            if (response.status === 422) {
+                result.textContent = "请填写简历原文";
+                return;
+            }
+
+            if (!response.ok) {
+                result.textContent = "简历画像提取失败，请稍后重试";
+                return;
+            }
+            result.replaceChildren("技能\n");
+            for (const skill of data.skills) {
+                result.append(createProfileOption(skill,"skills"),"\n");
+            }
+            result.append("\n项目\n");
+            for (const project of data.projects) {
+                result.append(createProfileOption(project,"projects"),"\n");
+            }
+            confirmButton.disabled = false;
+        }
+        const button = document.getElementById("extract-button");
+        button.addEventListener("click",async function() {
+            const input = document.getElementById("resume-text");
+            const result = document.getElementById("result");
+
+            clearProfile();
+            result.textContent = "正在提取画像…";
+            button.disabled = true;
+            input.readOnly = true;
+            
+
+            try {
+                await readResumeText();
+            }
+              catch {
+                result.textContent = "未能取得画像，请稍后重试";
+            } finally {
+                button.disabled = false;
+                input.readOnly = false;
+                
+
+            }
+
+        });
+
+        function confirmProfile() {
+            const checked = document.querySelectorAll("#result input:checked");
+            const confirmation = document.getElementById("confirmation");
+            const profile = { skills: [],projects: []};
+
+            for (const box of checked) {
+                const item = JSON.parse(box.value);
+                profile[box.name].push(item);
+            }
+
+            confirmation.textContent = JSON.stringify(profile,null,2);
+        }
+
+        const confirmButton = document.getElementById("confirm-button");
+        confirmButton.addEventListener("click",confirmProfile);
+
+
+        function clearConfirmation() {
+            document.getElementById("confirmation").textContent = "";
+        }
+
+        document.getElementById("result").addEventListener("change", clearConfirmation);
+
+
+        function clearProfile() {
+            confirmButton.disabled = true;
+            document.getElementById("result").replaceChildren();
+            clearConfirmation();
+        }
+
+        document.getElementById("resume-text").addEventListener("input", clearProfile);
+    </script>
+</body>
+</html>

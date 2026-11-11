@@ -16,10 +16,10 @@
 - Day 9 已完成并推送（`c72347b`、`ab66620`）。用手工样例验证简历画像的字段和引文，5 个画像测试通过，全套测试为 `29 passed, 1 warning`。
 - Day 10 已完成并推送（`1ab8087`）。命令行调用 DeepSeek 提取虚构简历的候选画像，再校验字段和引文。新增 4 个解析测试，全套测试为 `33 passed, 1 warning`。本次真实调用提取出 FastAPI、pytest 和简历预览工具，正确排除了计划学习的 Redis。
 - Day 11 已完成并推送（`1a8ffbd`）。画像提取函数接收原文，返回画像及调用信息，用 `ResumeExtractionError` 报告失败。命令行负责打印和退出提示。新增 4 个提取函数测试和 2 个命令行测试，全套测试为 `39 passed, 1 warning`。
-- Day 12 已完成本地验收，待提交。`POST /resumes/extract` 接收简历正文，复用提取函数返回画像；无效输入返回 422，提取失败返回 503。新增 5 个接口用例，全套测试为 `44 passed, 1 warning`。已在 `/docs` 中验证真实提取，返回 HTTP 200，三条引文均与原文一致。
-- 当前 Web 接口已接入模型；数据库、用户系统和前端页面尚未实现。
+- Day 12 已完成并推送（`19be12f`）。`POST /resumes/extract` 接收简历正文，复用提取函数返回画像。无效输入返回 422，提取失败返回 503。新增 5 个接口用例，全套测试为 `44 passed, 1 warning`。已在 `/docs` 中验证真实提取，返回 HTTP 200，三条引文均与原文一致。
+- Day 13 已通过本地功能验收。首页支持提交原文、查看引文和勾选画像条目。Edge 实测一次提取请求返回 HTTP 200，随后两次确认都使用页面上已有的数据。
 
-今天的练习见 [Day 12 任务单](docs/day-12.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md)、[Day 7](docs/day-07.md)、[Day 8](docs/day-08.md)、[Day 9](docs/day-09.md)、[Day 10](docs/day-10.md) 和 [Day 11](docs/day-11.md)。
+今天的练习见 [Day 13 任务单](docs/day-13.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md)、[Day 7](docs/day-07.md)、[Day 8](docs/day-08.md)、[Day 9](docs/day-09.md)、[Day 10](docs/day-10.md)、[Day 11](docs/day-11.md) 和 [Day 12](docs/day-12.md)。
 
 ## 第一版范围
 
@@ -42,6 +42,7 @@
 | `uv.lock` | 记录解析出的确切依赖版本，应提交到 Git |
 | `.venv/` | 本机虚拟环境，不提交到 Git |
 | `app/main.py` | 健康检查、岗位列表、题目预览、简历上传预览和画像提取接口 |
+| `app/static/index.html` | 简历输入框、画像提取按钮、候选项和确认结果 |
 | `app/resume_text.py` | 将简历字节解码为原文，保留格式并拒绝纯空白正文 |
 | `app/resume_profile.py` | 解析画像 JSON，校验技能和项目字段，逐项核对引文是否出现在原文中 |
 | `app/resume_extraction.py` | 请求模型并校验响应，返回提取结果或抛出提取异常 |
@@ -74,6 +75,7 @@
 | `docs/day-10.md` | 从模型消息正文解析候选画像，对照原文验证提取结果 |
 | `docs/day-11.md` | 提取函数与命令行的职责划分，以及返回值、异常和复用测试 |
 | `docs/day-12.md` | 简历画像 HTTP 接口的请求校验、异常转换和网页验收 |
+| `docs/day-13.md` | 首页的简历提取、勾选确认和 Edge 验收记录 |
 | `docs/learning-log.md` | 用自己的话填写学习记录 |
 
 ## 本地运行
@@ -87,11 +89,12 @@ uv run --env-file .env uvicorn app.main:app --reload --host 127.0.0.1 --port 800
 
 8001 被其他服务占用，目前使用 8002。打开：
 
+- [简历画像确认首页](http://127.0.0.1:8002/)
 - [健康检查](http://127.0.0.1:8002/health)
 - [岗位列表](http://127.0.0.1:8002/interview-directions)
 - [接口文档](http://127.0.0.1:8002/docs)
 
-`/health` 返回健康检查结果，`/interview-directions?limit=2` 返回前两条岗位数据。根路径 `/` 没有定义接口，访问它返回 404。
+`/health` 返回健康检查结果，`/interview-directions?limit=2` 返回前两条岗位数据。打开首页 `/`，填写简历并点击“读取简历”。看到技能和项目后，勾选想保留的条目，点击“确认画像”查看结果。
 
 ## Day 3 独立脚本
 

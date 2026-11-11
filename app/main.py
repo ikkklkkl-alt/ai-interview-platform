@@ -12,6 +12,9 @@ from app.resume_extraction import (
 )
 from app.resume_profile import ResumeProfile
 
+from pathlib import Path
+from fastapi.responses import FileResponse
+
 import json
 
 app = FastAPI()
@@ -83,3 +86,10 @@ def extract_resume(payload: ResumeExtractionRequest):
         ) from None
 
     return result.profile
+
+
+@app.get("/")
+def resume_page():
+    page = Path(__file__).parent / "static" / "index.html"
+
+    return FileResponse(page)
