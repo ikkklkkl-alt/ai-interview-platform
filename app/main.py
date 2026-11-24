@@ -12,6 +12,13 @@ from app.resume_extraction import (
 )
 from app.resume_profile import ResumeProfile
 
+from app.question_generation import (
+    GeneratedQuestionSet,
+    QuestionGenerationError,
+    QuestionGenerationRequest,
+    generate_questions
+)
+
 from pathlib import Path
 from fastapi.responses import FileResponse
 
@@ -93,3 +100,13 @@ def resume_page():
     page = Path(__file__).parent / "static" / "index.html"
 
     return FileResponse(page)
+
+@app.post("/questions/generate",response_model=GeneratedQuestionSet)
+def generate_interview_questions(payload: QuestionGenerationRequest):
+    try:
+        return generate_questions(payload.profile)
+    except QuestionGenerationError:
+        raise HTTPException(
+            status_code=503,
+            detail="面试题生成暂时不可用，请稍后重试",
+        ) from None

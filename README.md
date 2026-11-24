@@ -17,9 +17,10 @@
 - Day 10 已完成并推送（`1ab8087`）。命令行调用 DeepSeek 提取虚构简历的候选画像，再校验字段和引文。新增 4 个解析测试，全套测试为 `33 passed, 1 warning`。本次真实调用提取出 FastAPI、pytest 和简历预览工具，正确排除了计划学习的 Redis。
 - Day 11 已完成并推送（`1a8ffbd`）。画像提取函数接收原文，返回画像及调用信息，用 `ResumeExtractionError` 报告失败。命令行负责打印和退出提示。新增 4 个提取函数测试和 2 个命令行测试，全套测试为 `39 passed, 1 warning`。
 - Day 12 已完成并推送（`19be12f`）。`POST /resumes/extract` 接收简历正文，复用提取函数返回画像。无效输入返回 422，提取失败返回 503。新增 5 个接口用例，全套测试为 `44 passed, 1 warning`。已在 `/docs` 中验证真实提取，返回 HTTP 200，三条引文均与原文一致。
-- Day 13 已通过本地功能验收。首页支持提交原文、查看引文和勾选画像条目。Edge 实测一次提取请求返回 HTTP 200，随后两次确认都使用页面上已有的数据。
+- Day 13 已完成并推送（`a37729c`）。首页支持提交原文、查看引文和勾选画像条目。Edge 实测一次提取请求返回 HTTP 200，随后两次确认都使用页面上已有的数据。
+- Day 14 已完成后端验收。`POST /questions/generate` 接收用户确认的画像，返回三道结构化面试题。在 Swagger 提交 FastAPI 文件上传样例后收到 HTTP 200。全套离线测试为 `49 passed, 1 warning`。
 
-今天的练习见 [Day 13 任务单](docs/day-13.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md)、[Day 7](docs/day-07.md)、[Day 8](docs/day-08.md)、[Day 9](docs/day-09.md)、[Day 10](docs/day-10.md)、[Day 11](docs/day-11.md) 和 [Day 12](docs/day-12.md)。
+今天的练习见 [Day 14 任务单](docs/day-14.md)。回顾之前的内容可阅读 [Day 1](docs/day-01.md)、[Day 2](docs/day-02.md)、[Day 3](docs/day-03.md)、[Day 4](docs/day-04.md)、[Day 5](docs/day-05.md)、[Day 6](docs/day-06.md)、[Day 7](docs/day-07.md)、[Day 8](docs/day-08.md)、[Day 9](docs/day-09.md)、[Day 10](docs/day-10.md)、[Day 11](docs/day-11.md)、[Day 12](docs/day-12.md) 和 [Day 13](docs/day-13.md)。
 
 ## 第一版范围
 
@@ -76,6 +77,7 @@
 | `docs/day-11.md` | 提取函数与命令行的职责划分，以及返回值、异常和复用测试 |
 | `docs/day-12.md` | 简历画像 HTTP 接口的请求校验、异常转换和网页验收 |
 | `docs/day-13.md` | 首页的简历提取、勾选确认和 Edge 验收记录 |
+| `docs/day-14.md` | 根据确认画像生成三道结构化面试题 |
 | `docs/learning-log.md` | 用自己的话填写学习记录 |
 
 ## 本地运行
