@@ -14,6 +14,8 @@
         <pre id="result"></pre>
         <button type="button" id="confirm-button" disabled>确认画像</button>
         <pre id="confirmation"></pre>
+        <button type="button" id="generate-button" disabled>生成面试题</button>
+        <pre id="questions"></pre>
     </main>
     <script>
         function createProfileOption(item,group) {
@@ -81,7 +83,12 @@
             }
 
         });
+        function formatQuestion(item) {
+            const points = item.knowledge_points.join("、");
+            return item.question + "\n难度：" + item.difficulty + "\n知识点：" + points;
+        }
 
+        let confirmedProfile = null;
         function confirmProfile() {
             const checked = document.querySelectorAll("#result input:checked");
             const confirmation = document.getElementById("confirmation");
@@ -91,19 +98,52 @@
                 const item = JSON.parse(box.value);
                 profile[box.name].push(item);
             }
-
+            document.getElementById("questions").textContent = "";
+            confirmedProfile = profile;
+            generateButton.disabled = checked.length === 0;
             confirmation.textContent = JSON.stringify(profile,null,2);
         }
 
         const confirmButton = document.getElementById("confirm-button");
+        const generateButton = document.getElementById("generate-button");
         confirmButton.addEventListener("click",confirmProfile);
+        generateButton.addEventListener("click",async function() {
+            const body = { profile: confirmedProfile};
+            generateButton.disabled = true;
+            try {
+            document.getElementById("questions").textContent = "正在生成面试题...";
+            const response = await fetch("/questions/generate",{
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify(body)
+            });
+            const data = await response.json();
+            if (body.profile !== confirmedProfile) return;
+            if (!response.ok) {
+                document.getElementById("questions").textContent = "出题失败，请稍后重试";
+                return;
+            }
+            document.getElementById("questions").textContent = data.questions.map(formatQuestion).join("\n\n");
+            } catch {
+                if (body.profile === confirmedProfile) {
+                    document.getElementById("questions").textContent = "未能取得题目，请稍后重试";
+                }
+            } finally {
+                if (body.profile === confirmedProfile) {
+                    generateButton.disabled = false;
+                }
+            }
+        });
 
 
         function clearConfirmation() {
+            confirmedProfile = null;
+            generateButton.disabled = true;
             document.getElementById("confirmation").textContent = "";
+            document.getElementById("questions").textContent = "";
         }
 
-        document.getElementById("result").addEventListener("change", clearConfirmation);
+
 
 
         function clearProfile() {
