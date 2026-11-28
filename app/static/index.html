@@ -16,6 +16,8 @@
         <pre id="confirmation"></pre>
         <button type="button" id="generate-button" disabled>生成面试题</button>
         <pre id="questions"></pre>
+        <button type="button" id="preview-button" disabled>预览作答</button>
+        <pre id="answer-preview"></pre>
     </main>
     <script>
         function createProfileOption(item,group) {
@@ -88,6 +90,26 @@
             return item.question + "\n难度：" + item.difficulty + "\n知识点：" + points;
         }
 
+        function createAnswerField(item) {
+            const label = document.createElement("label");
+            label.textContent = formatQuestion(item);
+
+            const input = document.createElement("textarea");
+            input.dataset.question = item.question;
+            label.append(input);
+            return label;
+        }
+
+        function collectAnswers() {
+            const answers = [];
+            const inputs = document.querySelectorAll("#questions textarea");
+
+            for (const input of inputs) {
+                answers.push({ question:input.dataset.question, answer:input.value})
+            }
+            return answers;
+        }
+
         let confirmedProfile = null;
         function confirmProfile() {
             const checked = document.querySelectorAll("#result input:checked");
@@ -100,15 +122,31 @@
             }
             document.getElementById("questions").textContent = "";
             confirmedProfile = profile;
+            clearPreview();
             generateButton.disabled = checked.length === 0;
             confirmation.textContent = JSON.stringify(profile,null,2);
         }
 
         const confirmButton = document.getElementById("confirm-button");
         const generateButton = document.getElementById("generate-button");
+        const previewButton = document.getElementById("preview-button");
+
+        previewButton.addEventListener("click",function() {
+            const blocks = [];
+            for (const item of collectAnswers()) {
+                let answer = item.answer;
+                if (answer.trim() === "") {
+                    answer = "未作答";
+                }
+                blocks.push(item.question + "\n回答：" + answer);
+            }
+            document.getElementById("answer-preview").textContent = blocks.join("\n\n");
+        });
+
         confirmButton.addEventListener("click",confirmProfile);
         generateButton.addEventListener("click",async function() {
             const body = { profile: confirmedProfile};
+            clearPreview();
             generateButton.disabled = true;
             try {
             document.getElementById("questions").textContent = "正在生成面试题...";
@@ -123,7 +161,13 @@
                 document.getElementById("questions").textContent = "出题失败，请稍后重试";
                 return;
             }
-            document.getElementById("questions").textContent = data.questions.map(formatQuestion).join("\n\n");
+            const questionsArea = document.getElementById("questions");
+            questionsArea.replaceChildren();
+
+            for (const item of data.questions) {
+                questionsArea.append(createAnswerField(item),"\n\n");
+            }
+            previewButton.disabled = false;
             } catch {
                 if (body.profile === confirmedProfile) {
                     document.getElementById("questions").textContent = "未能取得题目，请稍后重试";
@@ -135,9 +179,14 @@
             }
         });
 
+        function clearPreview() {
+            previewButton.disabled = true;
+            document.getElementById("answer-preview").textContent = "";
+        }
 
         function clearConfirmation() {
             confirmedProfile = null;
+            clearPreview();
             generateButton.disabled = true;
             document.getElementById("confirmation").textContent = "";
             document.getElementById("questions").textContent = "";
